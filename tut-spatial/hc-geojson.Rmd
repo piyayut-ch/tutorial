@@ -1,0 +1,97 @@
+---
+title: Habits
+author: John Doe
+date: March 22, 2005
+output: html_document
+---
+
+```{r}
+pkgs = c(
+  "sf", "geojsonsf", "geojsonio", "jsonlite",
+  "leaflet", "highcharter", 
+  "janitor", "tidyverse"
+)
+
+xfun::pkg_attach2(pkgs)
+```
+
+```{r}
+path <- "geojson/simplified/tha_adm1.geojson"
+tha1_sf <- st_read(path) %>% clean_names()
+tha1_df <- tha1_sf %>% as_tibble()
+
+tha1_geojson <- sf_geojson(tha1_sf) %>%
+  fromJSON(simplifyVector = FALSE)
+```
+
+```{r}
+highchart() %>%
+  hc_add_series_map(
+    tha1_geojson,
+    tha1_df,
+    value = "shape_leng", 
+    joinBy = c("adm1_pcode", "adm1_pcode"),
+    tooltip = list(
+      pointFormat = "{point.adm1_pcode}",
+      valueDecimals = 2,
+      valuePrefix = "$",
+      valueSuffix = "USD"
+    )
+  ) %>%
+  hc_colorAxis(
+    stops = color_stops(
+      colors = viridisLite::magma(10, direction = -1, begin = 0))
+  )
+```
+
+```{r}
+library(idbr)
+library(purrr)
+library(dplyr)
+
+idb_api_key("35f116582d5a89d11a47c7ffbfc2ba309133f09d")
+yrs <-  seq(1980, 2030, by = 5)
+
+df <- map_df(c("male", "female"), function(sex){
+  mutate(idb1("US", yrs, sex = sex), sex_label = sex)
+})
+
+names(df) <- tolower(names(df))
+
+df <- df %>%
+  mutate(population = pop*ifelse(sex_label == "male", -1, 1))
+
+series <- df %>% 
+  group_by(sex_label, age) %>% 
+  do(data = list(sequence = .$population)) %>% 
+  ungroup() %>% 
+  group_by(sex_label) %>% 
+  do(data = .$data) %>%
+  mutate(name = sex_label) %>% 
+  list_parse()
+```
+
+```{r}
+highchart() %>% 
+  hc_chart(type = "scatter") %>% 
+  hc_yAxis(max = 6, min = 0) %>% 
+  hc_xAxis(max = 6, min = 0) %>%
+  hc_add_series(name = "Australia",
+                data = list(
+                  list(sequence = list(c(1,1),c(2,2),c(3,3),c(4,4)))
+                )) %>%
+  hc_add_series(name = "United States",
+                data = list(
+                  list(sequence = list(c(0,0),c(3,2),c(4,3),c(4,1)))
+                )) %>%
+  hc_add_series(name = "China",
+                data = list(
+                  list(sequence = list(c(3,2),c(2,2),c(1,1),c(2,5)))
+                )) %>% 
+  hc_motion(enabled = TRUE,
+            labels = 2000:2003,
+            series = c(0,1,2),
+            playIcon = "fa fa-play",
+            pauseIcon = "fa fa-pause"
+           )
+```

@@ -1,0 +1,56 @@
+---
+title: "แนะนำ package Highcharter"
+author: "ปิยยุทธ จิตต์จำนงค์"
+date: "2020-09-22"
+lastmod: "2020-09-22"
+# categories: ["R"]
+# tags: ["R", "tsbox", "Rpackage", "tips", "time series"]
+# showtoc: true
+# autoCollapseToc: true
+# contentCopyright: MIT
+# draft: true
+# mathjax: true
+
+output: 
+  html_document:
+    css: "style.css"
+---
+
+ความสามารถ เช่น  
+- พลอตกราฟ ได้จากข้อมูล `data.frames` `numeric` `character` หรือ R object เช่น `ts` `xts` `forecast`  
+- รองรับ Highstock พลอตกราฟเส้นข้อมูลอนุกรมเวลาได้ และรองรับ `xts` class  
+- รองรับ Highmaps สร้าง choropleth chart จาก `geojson` format ได้  
+- รองรับ Themes เช่น economist, financial times  
+- รองรับ features และ plugins เช่น motion, draggable points, font-awesom, tooltips, annotations
+
+## Highcharts
+```{r}
+library(highcharter)
+data(penguins, package = "palmerpenguins")
+
+hchart(
+  penguins,
+  "scatter",
+  hcaes(x = flipper_length_mm, y = bill_length_mm, group = species)
+  )
+```
+
+
+```{r}
+x <- c(rnorm(10000), rnorm(1000, 4, 0.5))
+
+hchart(x, name = "data") 
+```
+
+
+## 
+```{r}
+library(quantmod)
+
+x <- getSymbols("GOOG", auto.assign = FALSE)
+y <- getSymbols("AMZN", auto.assign = FALSE)
+
+highchart(type = "stock") %>%
+   hc_add_series(x) %>%
+   hc_add_series(y, type = "ohlc")
+```

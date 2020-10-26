@@ -1,0 +1,51 @@
+---
+title: "reactable เบื้องต้น"
+description: |
+  แนะนำการใช้งาน reactable
+author:
+  - name: ปิยยุทธ จิตต์จำนงค์ 
+    url: https://github.com/piyayut-ch
+    affiliation: National Agricultural Big Data Center
+    affiliation_url: https://nabc.go.th
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    css: "style.css"
+  # distill::distill_article
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Basic Use
+
+# Sorting
+# Filtering and Searching
+# Pagination
+# Grouping and Aggregation
+# Headers
+# Footers
+# Styling
+
+```{r}
+library(reactable)
+
+reactable(iris)
+```
+
+การจัดการ column ด้วย argument `columns` และ function `colDef`
+```{r}
+reactable(iris[1:5, ],
+  columns = list(
+    Sepal.Length = colDef(name = "Sepal Length"),
+    Sepal.Width = colDef(name = "Sepal Width"),
+    Species = colDef(align = "center")
+  )
+)
+```

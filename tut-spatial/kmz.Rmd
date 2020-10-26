@@ -1,0 +1,148 @@
+```{r}
+library(sf)
+library(leaflet)
+library(tidyverse)
+library(janitor)
+library(highcharter)
+# library(geojsonsf)
+```
+
+```{r}
+hcmap("countries/th/th-all")
+```
+
+```{r}
+x <- download_map_data("countries/th/th-all")
+```
+
+```{r}
+glimpse(x %>% get_data_from_map())
+```
+
+```{r}
+library(httr)
+library(jsonlite)
+library(geojsonio)
+library(here)
+library(geojsonsf)
+
+path <- here("tut-spatial", "geojson", "simplified", "tha_adm1.geojson")
+x <- st_read(path)
+
+thageojson <- sf_geojson(x)
+```
+
+```{r}
+thamap <- highchart(type = "map") %>%
+  hc_add_series(mapData = thageojson, showInLegend = FALSE)
+
+thamap
+```
+
+```{r}
+library(here)
+path <- here("tut-spatial", "geojson", "simplified", "tha_adm2.geojson")
+x <- st_read(path)
+xx <- clean_names(x)
+```
+
+```{r}
+library(httr)
+library(jsonlite)
+library(geojsonio)
+```
+
+```{r}
+# tha_map_json[1]
+```
+
+```{r}
+tha_map_json <- geojsonio::as.json(path)
+```
+
+```{r}
+hcmap(
+  tha_map_json,
+  data = tha_map_json,
+  value = "Shape_Leng",
+#   joinBy = c("hc-a2", "code"),
+#   name = "Fake data",
+#   dataLabels = list(enabled = TRUE, format = "{point.name}"),
+  borderColor = "#FAFAFA",
+  borderWidth = 0.1,
+  tooltip = list(
+    valueDecimals = 2,
+    valuePrefix = "$",
+    valueSuffix = "USD"
+  )
+)
+```
+
+```{r}
+thamap <- highchart(type = "map") %>%
+  hc_add_series(mapData = tha_map_json, showInLegend = FALSE)
+thamap
+```
+
+```{r}
+str(xx)
+```
+
+```{r}
+tabyl(xx %>% as.data.frame(), adm1_pcode) %>%
+  adorn_pct_formatting
+```
+
+```{r}
+options(
+  repr.plot.width=10, 
+  repr.plot.height=10, 
+  repr.plot.res = 300,
+  repr.matrix.max.rows = 10,
+  repr.matrix.max.cols = Inf
+)
+```
+
+```{r}
+path <- "geojson/simplified/tha_adm2.geojson"
+x = st_read(path)
+```
+
+```{r}
+str(x)
+```
+
+```{r}
+par(mar = c(0,0,0,0))
+plot(x[12], reset = FALSE)
+```
+
+```{r}
+x %>% as.data.frame()
+```
+
+```{r}
+x_sim <- rmapshaper::ms_simplify(
+  x, keep = 0.0005,
+  weighting = 5,
+  method = NULL, 
+  keep_shapes = TRUE)
+
+object.size(x_sim)
+```
+
+```{r}
+st_write(x_sim, "tha1.geojson", delete_layer = TRUE)
+```
+
+```{r}
+st_write(x_sim, "tha1.geojson")
+```
+
+```{r}
+st_write(x_sim, "tha1.geojson")
+```
+
+```{r}
+
+```

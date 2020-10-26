@@ -1,0 +1,135 @@
+---
+title: การสร้างเอกสาร HTML จาก rmarkdown
+author: Piyayut Chitchumnong
+date: July 18 2020
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: true
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+    df_print: kable
+---
+
+
+ขั้นตอนแรก คือการตั้งค่า output เป็น `html_document` YAML metadata ของไฟล์
+
+```
+---
+title: HTML docs
+author: Piyayut Chitchumnong
+date: July 18 2020
+output: html_document
+---
+```
+
+นอกจากนี้เราสามารถปรับคุณสมบัติของเอกสารได้ เช่น
+
+
+# Table of content
+
+```
+output:
+  html_document:
+    toc: true # การแสดง toc
+    toc_depth: 2 # เลือกลำดับของ heading ที่จะแสดงใน toc
+    toc_float: # true การทำให้ toc ลอยตาม 
+      collapsed: true
+      smooth_scroll: false
+```
+
+
+
+# การสร้างตัวเลขให้แต่ละส่วน
+
+```
+output:
+  html_document:
+    toc: true
+    number_sections: true
+```
+
+
+
+# การสร้าง tabset
+
+```
+## Quarterly Results {.tabset}
+
+### By Product
+
+(tab content)
+
+### By Region
+
+(tab content)
+```
+
+
+## ตัวอย่างการสร้าง tabset {.tabset}
+
+### By Product
+
+(tab content)
+
+### By Region
+
+(tab content)
+
+
+## ตัวอย่างการสร้าง tabset {.tabset .tabset-fade .tabset-pills}
+
+### By Product
+
+(tab content)
+
+### By Region
+
+(tab content)
+
+
+# การปรับแต่งสไตล์
+
+```
+---
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    css: [styles.css, styles2.css]
+---
+```
+
+```{r}
+library(tidyverse)
+data = mtcars
+head(data)
+```
+
+# รูป
+
+```
+output:
+  html_document:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+```
+
+# ตาราง
+
+```
+---
+output:
+  html_document:
+    df_print: {paged, kable, tibble}
+---
+```
+
+```{r}
+head(mtcars)
+```
+```

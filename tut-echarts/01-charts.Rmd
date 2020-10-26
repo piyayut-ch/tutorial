@@ -1,0 +1,164 @@
+---
+title: "การสร้าง chart ด้วย echarts4r"
+author: "Piyayut Chitchumnong"
+date: "2020-10-09"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+# Setup
+```{r}
+# install.packages("echarts4r")
+library(echarts4r)
+
+e_common(
+  font_family = "Athiti Light",
+  theme = NULL
+)
+
+df <- data.frame(
+  x = seq(50),
+  y = rnorm(50, 10, 3),
+  z = rnorm(50, 11, 2),
+  w = rnorm(50, 9, 2)
+)
+
+data <- jsonlite::fromJSON(
+  paste0(
+    "https://ecomfe.github.io/echarts-examples/public/",
+    "data/asset/data/confidence-band.json"
+  )
+)
+head(data)
+```
+
+# Evolution
+
+## Line, Area and Step
+```{r}
+df %>%
+  e_charts(x) %>%
+  e_line(y) %>%
+  e_line(z) %>%
+  e_line(w) %>%
+  e_title("กราฟเส้นและกราฟพื้นที่")
+```
+
+## Line with error bars
+```{r}
+data <- jsonlite::fromJSON(
+    paste0(
+        "https://ecomfe.github.io/echarts-examples/public/",
+        "data/asset/data/confidence-band.json"
+    )
+)
+
+data %>% 
+  dplyr::mutate(
+    date = as.Date(date, "%Y-%m-%d"),
+    l = l + value,
+    u = u - value
+  ) %>% 
+  e_charts(date) %>% 
+  e_line(value, symbol = "none") %>% 
+  e_band(
+    l, u, 
+    areaStyle = list(list(color = "grey"), list(color = "grey"))
+  )
+```
+
+## Line with smooth line 
+```{r}
+```
+
+## Candlestick
+
+
+## River
+
+
+# Distribution
+
+## Histrogram
+## Boxplot
+## Boxplot
+
+# Correlation
+
+## Correlation Matrix
+```{r}
+cor(mtcars) %>% 
+  e_charts() %>% 
+  e_correlations(order = "hclust") %>% 
+  e_tooltip()
+```
+
+## Scatter
+```{r}
+df %>% 
+  e_charts(x) %>% 
+  e_scatter(y, z) %>% 
+  e_visual_map(z, scale = e_scale) %>% # scale color
+  e_legend(FALSE) # hide legend
+```
+
+## Heatmap
+
+
+# Ranking
+
+## Bar
+## Parallel
+## Radar
+## Wordcloud
+
+
+# Part of a whole
+## Treemap
+## Pie
+## Donut
+## Rose
+## Sunburst
+
+
+# Map
+## Choropleth
+## Connection
+## Globe
+
+
+# Flow
+## Sankey
+## Network
+## Funnel
+
+
+
+## Heatmap
+```{r}
+v <- LETTERS[1:10]
+matrix <- data.frame(
+  x = sample(v, 300, replace = TRUE), 
+  y = sample(v, 300, replace = TRUE), 
+  z = rnorm(300, 10, 1),
+  stringsAsFactors = FALSE
+) %>% 
+  dplyr::group_by(x, y) %>% 
+  dplyr::summarise(z = sum(z)) %>% 
+  dplyr::ungroup()
+
+matrix %>% 
+  e_charts(x) %>% 
+  e_heatmap(y, z) %>% 
+  e_visual_map(
+    z,
+    orient = "horizontal",
+    left = "center"
+  ) %>% 
+  e_title("Heatmap")
+```

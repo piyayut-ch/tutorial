@@ -1,0 +1,67 @@
+---
+title: "Introduction echarts4r"
+author: "Piyayut Chitchumnong"
+date: "2020-10-09"
+output: html_document
+---
+
+# แนะนำการใช้ `echarts4r`
+
+## เกริ่นนำ
+วิธีการติดตั้งและเรียกใช้
+```{r}
+# install.packages("echarts4r")
+library(echarts4r)
+
+e_common(
+  font_family = "Athiti Light",
+  theme = NULL
+)
+```
+
+Basic
+
+1. function `echarts4r` ขึ้นต้นด้วย `e_`
+2. function สำหรับ Shiny proxies ลงท้ายด้วย `_p`
+3. กราฟ จะเริ่มต้นด้วย `e_charts`
+4. สามารถใช้ pipe `%>%`
+5. function ที่ ลงท้าย `_` สามารถใช้ string เป็น argument ได้ เหมาะสำหรับการสร้าง function 
+หมายเหตุ function ธรรมดา ใช้ non-standard valuation ใช้ชื่อ ตัวแปร โดยไม่ต้องใส่ในเครื่องหมายคำพูด 
+
+
+สร้าง toy data เพื่อสร้างกราฟ
+```{r}
+df <- data.frame(
+  x = seq(50),
+  y = rnorm(50, 10, 3),
+  z = rnorm(50, 11, 2),
+  w = rnorm(50, 9, 2)
+)
+```
+
+## Line and Area
+```{r}
+df %>%
+  e_charts(x) %>%
+  e_line(z) %>%
+  e_area(w) %>%
+  e_title("กราฟเส้นและกราฟพื้นที่")
+```
+
+## Bar and Step
+```{r}
+df %>% 
+  e_charts(x) %>% 
+  e_bar(y, name = "Serie 1") %>% 
+  e_step(z, name = "Serie 2") %>% 
+  e_title("Bar and step charts")
+```
+
+## Scatter
+```{r}
+df %>% 
+  e_charts(x) %>% 
+  e_scatter(y, z) %>% 
+  e_visual_map(z, scale = e_scale) %>% # scale color
+  e_legend(FALSE) # hide legend
+```
