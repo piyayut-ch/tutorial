@@ -1,0 +1,11 @@
+---
+title: extrafont
+output: html_document
+---
+
+การใช้ extrafont เพิ่ม font ภาษาไทย
+
+```{r}
+#install.packages("extrafont")
+library(extrafont)
+```
