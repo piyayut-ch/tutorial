@@ -1,0 +1,17 @@
+```{r}
+library(highcharter)
+library(dplyr)
+# remotes::install_github("allisonhorst/palmerpenguins")
+data(penguins, package = "palmerpenguins")
+data(diamonds, economics_long, package = "ggplot2")
+
+hchart(penguins, "scatter", hcaes(x = body_mass_g, y = flipper_length_mm , group = species))
+```
+
+```{r}
+remotes::install_github("allisonhorst/palmerpenguins")
+```
+
+```{r}
+
+```
