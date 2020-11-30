@@ -1,0 +1,36 @@
+---
+title: "แนะนำ package Highcharter"
+author: "ปิยยุทธ จิตต์จำนงค์"
+date: "2020-11-22"
+output: 
+  html_document
+---
+
+## Highcharts
+```{r eval=FALSE}
+# install.packages("remotes")
+remotes::install_github("mitchelloharawild/icon")
+```
+
+```{r}
+library(icon)
+```
+
+```{r icon-custom}
+custom <- icon::icon_set("icons")
+```
+
+```{r}
+x <- custom$ship
+x <- fontawesome("ship", style = "solid")
+# icon_style(x, fill = "red")
+icon_style(x, fill = "red", scale = 10)
+```
+
+```{r icon-sticker}
+custom$ship
+# str(custom$ship)
+
+x <- fontawesome("ship", style = "solid")
+icon_style(x, fill = "red")
+```

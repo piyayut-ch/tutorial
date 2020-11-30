@@ -6,18 +6,23 @@ output:
   html_document:
     css: "style.css"
 ---
+
 ในบทความนี้จะมาแนะนำ R package `highcharter` ในการทำ interactive visualization
 มีความสามารถ เช่น  
 - พลอตกราฟ ได้จากข้อมูล `data.frames` `numeric` `character` หรือ R object เช่น `ts` `xts` `forecast`  
 - รองรับ Highstock พลอตกราฟเส้นข้อมูลอนุกรมเวลาได้ และรองรับ `xts` class  
 - รองรับ Highmaps สร้าง choropleth chart จาก `geojson` format ได้  
 - รองรับ Themes เช่น economist, financial times  
-- รองรับ features และ plugins เช่น motion, draggable points, font-awesom, tooltips, annotations
+- รองรับ features และ plugins เช่น motion, draggable points, font-awesome, tooltips, annotations
+
 
 ## Highcharts
+
+`hchart(<data.frame>, <type_of_chart>, hcaes(<aesthetics>), ...)`
+
 ```{r}
 library(highcharter)
-install.packages("palmerpenguins")
+# install.packages("palmerpenguins")
 data(penguins, package = "palmerpenguins")
 
 hchart(
@@ -36,7 +41,6 @@ hchart(
 
 ```{r}
 x <- c(rnorm(10000), rnorm(1000, 4, 0.5))
-
 hchart(x, name = "data") 
 ```
 
@@ -51,4 +55,73 @@ y <- getSymbols("AMZN", auto.assign = FALSE)
 highchart(type = "stock") %>%
    hc_add_series(x) %>%
    hc_add_series(y, type = "ohlc")
+```
+
+```{r}
+library(highcharter)
+data(economics_long, package = "ggplot2")
+
+economics_long2 <- dplyr::filter(economics_long, variable %in% c("pop", "uempmed", "unemploy"))
+
+head(economics_long2)
+```
+
+```{r}
+
+```
+
+```{r}
+hchart(
+  economics_long2, 
+  "line", 
+  hcaes(x = date, y = value01, group = variable),
+  name = c("Population", "Unemployment", "Unemployment C"),
+)
+```
+
+```{r}
+data(economics, package = "ggplot2")
+economics %>% head()
+```
+
+```{r}
+data(GNI2014, package = "treemap")
+
+hcmap(
+  "custom/world-robinson-lowres", 
+  data = GNI2014,
+  name = "Gross national income per capita", 
+  value = "GNI",
+  borderWidth = 0,
+  nullColor = "#d3d3d3",
+  joinBy = c("iso-a3", "iso3")
+) %>%
+hc_colorAxis(
+    stops = color_stops(colors = viridisLite::inferno(10, begin = 0.1)),
+    type = "logarithmic"
+) %>%
+hc_mapNavigation(enabled = TRUE)
+```
+
+```{r}
+library(highcharter)
+
+data("citytemp")
+
+hc <- highchart() %>% 
+  hc_xAxis(categories = citytemp$month) %>% 
+  hc_add_series(
+    citytemp$tokyo, name = "Tokyo"
+  ) %>% 
+  hc_add_series(
+    citytemp$london, name = "London" 
+  )
+
+hc
+# hc %>% 
+#   hc_chart(type = "column")
+```
+
+```{r}
+
 ```
