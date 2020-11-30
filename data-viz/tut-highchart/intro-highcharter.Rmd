@@ -1,22 +1,13 @@
 ---
 title: "แนะนำ package Highcharter"
 author: "ปิยยุทธ จิตต์จำนงค์"
-date: "2020-09-22"
-lastmod: "2020-09-22"
-# categories: ["R"]
-# tags: ["R", "tsbox", "Rpackage", "tips", "time series"]
-# showtoc: true
-# autoCollapseToc: true
-# contentCopyright: MIT
-# draft: true
-# mathjax: true
-
+date: "2020-11-22"
 output: 
   html_document:
     css: "style.css"
 ---
-
-ความสามารถ เช่น  
+ในบทความนี้จะมาแนะนำ R package `highcharter` ในการทำ interactive visualization
+มีความสามารถ เช่น  
 - พลอตกราฟ ได้จากข้อมูล `data.frames` `numeric` `character` หรือ R object เช่น `ts` `xts` `forecast`  
 - รองรับ Highstock พลอตกราฟเส้นข้อมูลอนุกรมเวลาได้ และรองรับ `xts` class  
 - รองรับ Highmaps สร้าง choropleth chart จาก `geojson` format ได้  
@@ -26,6 +17,7 @@ output:
 ## Highcharts
 ```{r}
 library(highcharter)
+install.packages("palmerpenguins")
 data(penguins, package = "palmerpenguins")
 
 hchart(
@@ -34,6 +26,12 @@ hchart(
   hcaes(x = flipper_length_mm, y = bill_length_mm, group = species)
   )
 ```
+
+`highcharter` ฉลาดมาก 
+สร้างกราฟง่าย ๆ ด้วย 3 function
+1. `hchart(<OBJECT>)` เป็น function ที่สร้าง `highchart` object จาก object
+2. `hc_add_series()`
+3. `hcaes()`
 
 
 ```{r}
