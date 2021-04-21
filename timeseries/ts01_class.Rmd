@@ -1,0 +1,453 @@
+---
+title: "พิ้นฐาน"
+author: "Piyayut Chitchumnong"
+date: "2020-04-19"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+
+# What is Timeseries
+ในทางเศรษฐศาสตร์ ข้อมูลถูกแบ่งออกเป็น 3 ประเภท ได้แก่ 
+- **cross-sectional** data หรือ ข้อมูลตัดขวาง เป็นข้อมูลที่เน้นคุณลักษณะเฉพาะของสิ่งที่เราสนใจ เช่น คน/ครัวเรือน/บริษัท/ประเทศ เป็นต้น โดยไม่มีมิติเวลาเข้ามาเกี่ยวข้อง หรือ เป็นข้อมูล ณ ช่วงเวลาใดช่วงเวลาหนึ่ง เช่น ข้อมูลสำรวจภาวะแรงงาน เป็นต้น
+- **timeseries** data หรือ ข้อมูลอนุกรมเวลา เป็นข้อมูลที่มีมิติของเวลาเข้ามาเกี่ยวข้อง เช่น ข้อมูลราคาหุ้น เป็นต้น
+- **panel** data หรือ ข้อมูลพาแนล เป็นข้อมูลที่มีลักษณะของ cross-section และ timeseries ผสมกัน กล่าวคือ เป็นข้อมูลที่บันทึกคุณลักษณะเฉพาะของสิ่งที่เราสนใจ ณ ช่วงเวลาต่าง ๆ เช่น ข้อมูล macroeconomics ของประเทศในเอเชีย ตั้งแต่ปี 2545 - 2562 เป็นต้น
+
+ข้อมูลแต่ละประเภท มีลักษณะเฉพาะ และมีเครื่องมือในการวิเคราะห์ที่แตกต่างกันออกไป ใน series นี้จะเน้นไปทีข้อมูล **timeseries** โดย timeseries data จะต้องมีข้อมูลที่ระบุถึงเวลา หรือ ช่วงเวลาที่ข้อมูลนี้ได้รับการบันทึก เราเรียกข้อมูลนี้ว่า `time index` ซึ่งจะกล่าวในรายละเอียดต่อไป
+
+ตัวอย่างของข้อมูล timeseries
+
+```{r}
+library(tidyverse)
+library(tidyquant)
+library(timetk)
+library(tsbox)
+library(lubridate)
+```
+
+```{r}
+data("FANG")
+FB_tbl <- FANG %>% filter(symbol == "FB")
+FB_tbl
+```
+
+# Timeseries fundamental
+ในส่วนนี้จะเป็นการพูดถึงพื้นฐานสำคัญของ timeseries โดยจะเริ่มจากการพูดถึง `timeseries index` ซึ่งเป็นข้อมูลที่บอกถึงเวลาของแต่ละ observation ซึ่งข้อมูล timeseries index มีข้อมูลที่ซ้อนอยู่ในนั้น เช่น ปี ไตรมาส เดือน วันที่ของสัปดาห์ ซึ่งเราจะเรียกข้อมูลนี้ว่า `timeseries signature` และปิดท้ายด้วยเครื่องมือ `timeseries summary` ที่ช่วยในการสรุปข้อมูล 
+
+
+## timeseries index
+timeseries index คือ ข้อมูลที่บอกถึงเวลาของแต่ละ observation ซึ่งอาจจะอยู่ในหลายรูปแบบ เช่น หน่วยเป็นวัน (`date`) หรือ วันและเวลา (`datetime`) ประเภทของเวลาว่าเป็น จุดเวลา (`timestamp`) หรือ ช่วงเวลา (`time interval`)
+
+
+### date
+ข้อมูล date หรือ วันที่ จะถูกจัดเก็บใน class ที่ชื่อว่า `Date` โดยในทางคอมพิวเตอร์จะเก็บข้อมูลในรูปแบบของตัวเลข ไม่ใช่ตัวหนังสือ เพื่อเป็นมาตรฐานและง่ายในการจัดการ  โดยตัวเลขนั้นหมายความถึง จำนวนวันที่นับจากวันอ้างอิง โดย `R` ใช้มาตรฐานของ unix ซึ่งมีวันที่อ้างอิง คือ วันที่ `1970-01-01` ยกตัวอย่างเช่น ค่า 0 หมายถึง วันที่อ้างอิง และค่า 1 หมายถึง วันที่ `1970-01-01` และค่า -1 หมายถึง วันที่ `1969-12-31` เป็นต้น (หมายเหตุ excel ใช้วันอ้างอิงที่ต่างกัน โดยวันอ้างอิงที่ใช้ คือ `1900-01-01`)
+
+ในทางปฏิบัติ ข้อมูลดิบที่ไมีหลายรูปแบบ แต่ส่วนใหญ่ที่พบ คือ 1) การใช้ 1 column ที่เป็นข้อความของวันที่ หรือ 2) การใช้หลาย column ในการเก็บข้อมูล เช่น มี column วัน เดือน และ ปี แยกออกจากกัน  หากข้อมูลวันที่อยู่ในรูปแบบข้อความ จะต้องใช้ความระมัดระวังในการจัดการเนื่องจาก format ของวันที่มีความหลากหลายมาก เช่น ปีเป็นได้ทั้ง พ.ศ. หรือ ค.ศ. เดือนเป็นภาษาไทยบ้าง ภาษาอังกฤษบ้าง เป็นตัวเลขบ้าง ลำดับที่แตกต่างกัน date format ของอเมริกา จะใช้ เดือน/วัน/ปี ของประเทศอื่นจะใช้ วัน/เดือน/ปี เป็นต้น
+
+**ดังนั้น** ขั้นตอนแรกในการจัดการข้อมูล timeseries คือ การแปลงข้อมูลให้อยู่ใน `Date` class เสียก่อน แล้วหากค่อยแปลงข้อมูลให้อยู่ในรูปแบบ format ที่ต้องการภายหลัง โดย base R มี function `as.Date()` ในการแปลงข้อมูล `character` เป็น `Date`
+
+```{r}
+mydate_chr <- c("2020-01-01", "2021-12-25")
+mydate_chr %>% str()
+
+mydate_date <- mydate_chr %>% as.Date() 
+mydate_date %>% str()
+```
+
+นอกจาก function ที่มีให้จาก base r แล้ว ยังมี package อื่น ๆ ที่ช่วยจัดการข้อมูลที่เป็นวันที่และเวลา หนึ่งในนั้นคือ package `lubridate` หนึ่งใน `tidyverse` พัฒนาโดย `Rstudio`  `lubridate` ช่วยแปลงข้อความ หรือ character ให้เป็น date โดยมี helper function เช่น `as_date` `ymd` `dmy` เป็นต้น นอกจากนี้ `lubridate` ยังมี function ที่ช่วยทำอย่างอื่นอีก เช่น การสกัดข้อมูลจาก `Date` การคำนวณที่เกี่ยวกับเวลา เป็นต้น
+
+ตัวอย่างการใช้ lubridate ในการแปลง `character` เป็น `Date`
+
+```{r}
+lubridate::as_date(mydate_chr) %>% str()
+lubridate::ymd(mydate_chr) %>% str()
+```
+
+**ข้อดี 1** ของการแปลงข้อมูลให้อยู่ใน `Date` class คือ เราสามารถเรียกข้อมูลที่อยู่เบื้องหลังได้ เช่น 
+- วันนั้นคือวันอะไรของอาทิตย์ เป็นต้น
+
+```{r}
+mydate_date %>% lubridate::wday(label = TRUE)
+```
+
+- วันนี้อยู่ในปีที่มี 366 วัน หรือที่เรียกว่า leap year หรือไม่
+
+```{r}
+mydate_date %>% lubridate::leap_year()
+```
+
+**ข้อดี 2** เราสามารถแสดงผลวันที่ในรูปแบบที่เราต้องการได้ เช่น ให้แสดงในรูปแบบของ วันที่ไม่มี 0 นำหน้า ชื่อเดือนแบบย่อ และปีแบบย่อ เป็นต้น ซึงจะเป็นประโยชน์อย่างมากในการทำ data visualization หรือ report
+
+```{r}
+mydate_date %>% format(format = "%e %b %y")
+```
+
+**หมายเหตุ:** สำหรับวันที่ใน**ภาษาไทย**จะมีความซับซ้อนเพิ่มเติมขึ้นเนื่องจาก ปี พ.ศ. ไม่ได้นิยมในประเทศอื่น ทำให้การ convert จากข้อความที่ใช้ปี พ.ศ. จะทำให้เกิดความคลาดเคลื่อนจากวันที่จริง  **ดังนั้น** ในการจัดการกับวันที่ของไทยจึงต้องระมัดระวังเป็นพิเศษ ยกตัวอย่างเช่น
+
+```{r}
+dmy("1 January 2021") %>% as.numeric() #18628
+dmy("1 มกราคม 2564", locale = "Thai") %>% as.numeric() #216954
+```
+
+arguement locale ช่วยให้เครื่องรู้ว่าต้องใช้ format วันที่ของไทย อย่างไรก็ดีเครื่อง ไม่ได้ใช้ปี พ.ศ. ทำให้โปรแกรมจะเข้าใจว่า 2564 คือ ค.ศ. 2564 ไม่ใช้ พ.ศ. 2564 ตามที่เราตั้งใจ นอกจากนี้ ชื่อเดือนที่เป็นตัวย่อ ต้องมี จุด ด้วยหากไม่มี เครื่องจะไม่สามารถเข้าใจได้
+
+```{r}
+dmy("1 มกราคม 2564", locale = "Thai") %>% str()
+dmy("1 ม.ค. 2564", locale = "Thai") %>% str()
+dmy("1 มค 2564", locale = "Thai") %>% str()
+```
+
+### datetime
+
+ข้อมูล datetime หรือ วันที่และเวลา จะถูกจัดเก็บใน class ที่ชื่อว่า `POSIXt` เหมือนกัน `Date` ข้อมูลด้าน datetime จะถูกจัดเก็บในรูปแบบของตัวเลข เพื่อเป็นมาตรฐานและง่ายในการจัดการ ที่แตกต่างกันคือ ตัวเลขใน `POSIXt` นั้นจะหมายความถึง จำนวนวินาทีนับจากวันอ้างอิงมาตรฐานของ unix ซึ่งมีวันที่อ้างอิง คือ วันที่ `1970-01-01` เวลา `00:00:00` ตามเวลา timezone ของ `UTC` โดยของประเทศไทยจะเร็วกว่า UTC 7 ชั่วโมง หรือ 25,200 วินาที ทำให้การจัดการข้อมูลเรื่องเวลาต้องระมัดระวังเรื่อง timezone ด้วย
+
+base R ที function ในการแปลงข้อความ เป็น datetime ด้วย `as.POSIXlt()` และ `as.POSIXct()`
+
+```{r}
+Sys.timezone() # tz ของเครื่องตอนนี้ คือ Asia/Bangkok
+mydttm_chr <- c("1970-01-01 00:00:00")
+as.POSIXlt(mydttm_chr) %>% as.numeric() # ไม่ระบุ tz จะใช้ tz ของเครื่อง
+as.POSIXlt(mydttm_chr, tz = "UTC") %>% as.numeric() # ใช้ tz UTC
+```
+
+`lubridate` มี helper function ในการจัดการ เช่น `ymd_hms()` ในการแปลงข้อมูลที่เรียงจาก ปี เดือน วัน ชม นาที วินาที ตามลำดับ นอกจากนี้ยังมี function ในการสกัดข้อมูล เช่น `hour()` 
+
+```{r}
+lubridate::ymd_hms(mydttm_chr)
+lubridate::ymd_hms(mydttm_chr) %>% hour()
+```
+
+### others class
+นอกจาก date และ datetime class แล้ว ยังมี class ที่เกี่ยวกับเวลาอีก เช่น class `yearmon` และ class `yearqtr` จาก package `zoo`
+
+```{r}
+mydate_date <- c('2020-01-01', '2021-12-25') %>% as.Date()
+
+zoo::as.yearmon(mydate_date) %>% as.numeric()
+zoo::as.yearqtr(mydate_date) %>% as.numeric()
+```
+
+### `tk_index`
+
+```{r}
+FB_tbl %>%
+  tk_index()
+```
+
+## signature
+
+```{r}
+FB_tbl %>%
+  tk_index() %>%
+  tk_get_timeseries_signature()
+```
+
+```{r}
+FB_tbl %>% 
+  tk_augment_timeseries_signature(.date_var = date)
+```
+
+## summary
+
+```{r}
+FB_tbl %>%
+  tk_index() %>%
+  tk_get_timeseries_summary()
+```
+
+## frequency
+
+```{r}
+FB_tbl %>% 
+  tk_index() %>% 
+  tk_get_frequency(period = "auto")
+```
+
+```{r}
+options(
+  repr.plot.width = 8, 
+  repr.plot.height = 12
+)
+```
+
+```{r}
+taylor_30_min %>%
+    plot_stl_diagnostics(date, value, 
+                         .frequency = "auto", .trend = "auto",
+                         .interactive = FALSE)
+```
+
+## trend
+
+
+# Timeseries class
+
+```{r}
+L3 <- LETTERS[1:3]
+fac <- sample(L3, 10, replace = TRUE)
+(d <- data.frame(x = 1, y = 1:10, fac = fac))
+fac
+```
+
+```{r}
+library(tsibble)
+```
+
+```{r}
+q10_quarterly <- m4_quarterly %>% filter(id == "Q10")
+q10_quarterly
+```
+
+```{r}
+q10_quarterly_ts <- tk_ts(q10_quarterly, select = value, start = 2000, freq = 4, silent = TRUE)
+```
+
+```{r}
+tk_tbl(q10_quarterly_ts, timetk_idx = TRUE)
+```
+
+```{r}
+tk_xts(q10_quarterly, select = -(id:date), date_var = date) %>%
+    head()
+```
+
+```{r}
+x_date <- data.frame(
+  date = c("2021-01-01", "2021-02-01", "2021-04-01", "2021-05-01"), 
+  x = c(10, 15, 12, 14),
+  y = c(15, 2, 30, 5)
+)
+
+# x_dttm <- data.frame(
+#   date = c("2021-01-01 9:00:00", "2021-01-01", "2021-04-01"), 
+#   value = c(10,15,12)
+# )
+
+x_date <- x_date %>%
+  mutate(date = as.Date(date)) %>%
+  as_tsibble()
+
+# x_date %>% attributes()
+# x_date %>% tk_index
+# ts_regular(x_date)
+```
+
+```{r}
+tk_ts_(data_tbl, select = select)
+```
+
+```{r tags=c()}
+tk_ts(m4_quarterly, select = value) %>% tk_index(timetk_idx = TRUE)
+```
+
+```{r}
+m4_quarterly %>%
+  as_tsibble
+```
+
+```{r}
+m4_quarterly %>%
+#   filter(id == "Q10") %>%
+#   mutate(x = id) %>%
+#   pivot_wider("date", names_from = "id") %>%
+#   mutate(date = as.yearqtr(date)) %>%
+  as_tsibble(index = "date") %>% 
+  tk_ts() 
+```
+
+```{r}
+tk_tbl(m4_quarterly, timetk_idx  = TRUE) %>% str()
+```
+
+```{r}
+m4_quarterly %>%
+  mutate(date = as.yearqtr(date)) %>%
+#   as_tsibble(key = "id", index = "date") %>%
+  tk_ts() %>% tk_index(timetk_idx = TRUE)
+```
+
+```{r}
+m4_quarterly %>%
+#   mutate(date = yearquarter(date)) %>%
+  as_tsibble(key = "id", index = "date") %>%
+  ts_ts() %>% tk_index
+```
+
+```{r}
+df <- m4_quarterly %>%
+  mutate(date = yearquarter(date)) %>%
+  as_tsibble(key = "id", index = "date", regular = TRUE)
+df %>% str()
+```
+
+```{r}
+attr(df, "index2")
+```
+
+```{r}
+tk_make_holiday_sequence
+```
+
+```{r}
+x_date %>% attributes()
+```
+
+```{r}
+AirPassengers %>% attributes()
+```
+
+```{r}
+AirPassengers %>% as.zoo() %>% tk_index() %>% str()
+```
+
+```{r}
+data(sunspots)
+class(sunspots)
+```
+
+```{r}
+m4_hourly %>%
+  tk_index() %>% as.numeric()
+```
+
+```{r}
+m4_quarterly %>%
+  mutate(date2 = as.yearmon(date), `.before` = id) %>%
+  tk_index() %>% str()
+```
+
+```{r}
+tk_index(FB_tbl) %>% str()
+```
+
+```{r}
+x <- FANG %>% as_tsibble(key = "symbol", index = "date") %>% ts_ts()
+```
+
+```{r}
+x %>% head()
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## ts
+## zoo/xts
+## data.frame/tibble/data.table
+## tsibble/tibbletime
+## Conversion
+
+
+## Best Practice
+
+1. **เตรียมข้อมูล** timeseries ควรแปรงให้อยู่ในรูปแบบ `data.frame` หรือ `tibble` โดยมีองค์ประกอบที่จำเป็น (required) 2 ส่วน ได้แก่ 
+  - **index** เป็น column ที่เก็บข้อมูลด้านเวลา โดยจะต้อง<u>แปลงข้อมูลเป็น class ที่เกี่ยวกับเวลา</u> เช่น `Date` `POXISt` `yearqrt` `yearmon` ตามที่ได้อธิบายไว้ข้างต้น  ทั้งนี้ column index ควรมีจำนวน column เพียง 1 column
+  - **data** เป็น columns ที่เก็บข้อมูลตัวแปรที่เราสนใจ เช่น ราคาขาย ปริมาณการขาย เป็นต้น มีได้มากกว่า 1 column
+
+สำหรับข้อมูลที่เป็น panel data จะต้องมีองค์ประกอบเพิ่มเติมอีก 1 ส่วน คือ
+  - **id** เป็น columns ที่เก็บข้อมูลที่ระบุถึงตัวตนของตัวอย่างที่เราสนใจ เช่น ชื่อประเทศ id ของครัวเรือน เป็นต้น โดย id สามารถมีได้มากกว่า 1 column เช่น การส่งออกของแต่ละประเทศ สามารถมี column ที่บอกถึงประเทศ และ อีก column ที่บอกถึงรหัสสินค้า (hscode) เป็นต้น
+
+2. **จัดเรียงข้อมูล** โดยเรียงลำดับจาก id, index และ data ตามลำดับ และบันทึกไฟล์ที่ clean แล้ว ในรูปแบบ text file (`csv`) และ binary file (`rds`) ไว้ด้วย
+
+3.  ในการวิเคราะห์ **แปลงข้อมูลให้อยู่ใน `class`** ที่ library ต้องการ เช่น `forecast` ต้องการ `ts` เป็นต้น โดยใช้ library เช่น `tsbox` หรือ `timetk`
+
+4. เมื่อวิเคราะห์หรือประมวลผลเสร็จแล้ว ให้แปลงผลที่ได้กลับไปในในรูปแบบ `data.frame` หรือ `tibble`
+
+```{r}
+# fdeaths %>% ts_xts()
+```
+
+```{r}
+# fdeaths %>% tk_tbl() %>% tk_xts()
+```
+
+```{r}
+fdeaths %>% ts_xts() %>% str()
+```
+
+```{r}
+mdeaths_xts <- mdeaths %>% ts_xts()
+ts_c(mdeaths_xts, fdeaths)
+```
+
+```{r}
+ts_c(fdeaths, mdeaths) %>% ts_tbl() %>% ts_wide() %>% ts_long() %>% ts_ts()
+```
+
+```{r}
+tk_tbl(fdeaths) %>% full_join()
+```
+
+```{r}
+library(tidyverse)
+library(tidyquant) # Used for FANG dataset
+library(timetk)
+```
+
+```{r}
+# install.packages("tsbox")
+# install.packages("timetk")
+library(tsbox)
+library(timetk)
+library(tidyverse)
+```
+
+# Best Practice
+```{r}
+x.ts <- ts_c(fdeaths, mdeaths)
+x.xts <- ts_xts(x.ts)
+x.df <- ts_df(x.ts)
+x.tbl <- ts_tbl(x.ts)
+```
+
+```{r ex, echo=FALSE}
+str(x.ts)
+```
+
+```{r}
+str(x.xts)
+```
+
+```{r}
+str(x.df)
+```
+
+```{r}
+str(x.tbl)
+```
+
+```{r}
+x.ts %>% head()
+```
+
+```{r}
+ts_scale(x.ts)
+```
+
+```{r}
+m4_quarterly
+
+ts_ts(m4_quarterly)
+```
+
+```{r}
+tk_ts(x.df %>% filter(id == "mdeaths"), start = 1974, freq = 12)
+```
+
+```{r}
+
+```

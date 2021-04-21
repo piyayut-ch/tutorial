@@ -1,0 +1,125 @@
+---
+title: บทที่ 19 Shiny modules
+output:
+  html_document:
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 8
+    fig_height: 5
+    fig_caption: true
+    df_print: paged
+    code_folding: show
+    highlight: zenburn
+    theme:
+      base_font : !expr bslib::font_google("Sarabun")
+      code_font : !expr bslib::font_google("Roboto Mono")
+
+---
+
+
+---
+ในบทที่แล้วได้พูดถึงการใช้ function โดยแบ่งงานออกเป็นงานย่อยๆ อย่างไรก็ดี function มีข้อจำกัด คือ สามารถทำงานได้เฉพาะ client side (ui) หรือ server side เท่านั้น หากต้องการ code ที่ทำงานพร้อมกันทั้ง client และ server ต้องใช้เทคนิคที่เรียกว่า `module`
+
+Module จริงๆ แล้วก็คือ code ที่รวม `ui` และ `server` function เข้าด้วยกัน สิ่งที่ให้ module มีความพิเศษ คือ การจัดการ **namespace** กล่าวคือ ใน module จะสร้าง namespace ขึ้นมาใหม่ภายใน module ทำให้ไม่เกิดปัญหา namespace conflict
+
+ข้อดี ของการใช้ module คือ  
+
+- สามารถทำให้เราแบ่งงานออกมาทำอย่างเป็นอิสระได้ ทำให้สะดวกต่อการเขียน และทดสอบ 
+- สามารถใช้ module ซ้ำได้ ลดจำนวน code ใน application
+
+
+```{r, eval = FALSE}
+library(shiny)
+```
+
+# Module basics
+เริ่มต้นสร้าง module แรกกัน โดยเริ่มจาก app ง่ายๆ ที่สร้าง histogram
+```{r, eval = FALSE}
+ui <- fluidPage(
+  selectInput("var", "Variable", names(mtcars)),
+  numericInput("bins", "bins", 10, min = 1),
+  plotOutput("hist")
+)
+
+server <- function(input, output, session) {
+  data <- reactive(mtcars[[input$var]])
+  output$hist <- renderPlot({
+    hist(data(), breaks = input$bins, main = input$var)
+  }, res = 96)
+}
+```
+
+แม้ว่า app นี้จะง่ายจนไม่จำเป็นต้องใช้ module แต่เป็นการเริ่มต้นที่ดีในการทำความเข้าใจหลักการในการสร้าง module ก่อนที่จะประยุกต์กับ app ที่มีความซับซ้อนมากขึ้น
+
+องค์ประกอบของ module มี สองส่วน เหมือนกับ app เลย คือ
+- **module ui**  function ที่ใช้สร้าง `ui`
+- **module server**   function ที่ใช้ทำงานใน `server` function อีกที
+ทั้งสอง function มี argument ที่เหมือนกับ คือ `id` ซึ่งเป็นหัวใจในการจัดการ namespace ของ module
+
+
+## module ui 
+การสร้าง module ui function มีด้วยการ 2 ขั้นตอน 
+
+- นำ ui code มาใส่ใน function ที่มี argument `id` แล้วหุ้มด้วย `tagList()`
+- ใน ui code ให้ใส่ NS() ครอบ id เดิม เช่น เดิม ใช้ `"var"` ให้เปลี่ยนเป็น `NS(id, "var")` เป็นต้น
+
+จาก histogram app ข้างต้น เราสามารถสร้าง module ui function โดยตั้งชื่อว่า `histogramUI` ได้ดังนี้
+```{r, eval = FALSE}
+histogramUI <- function(id) {
+  tagList(
+    selectInput(NS(id, "var"), "Variable", choices = names(mtcars)),
+    numericInput(NS(id, "bins"), "bins", value = 10, min = 1),
+    plotOutput(NS(id, "hist"))
+  )
+}
+```
+หมายเหตุ `tagList()` เป็น function ทำรวม html compenent โดยไม่ได้กำหนด layout ไว้ ซึ่งการกำหนด layout ให้ใช้ layout function อื่น แทน เช่น `column()` หรือ `fluidRow()`
+
+## module server
+การสร้าง module server function มีด้วยการ 2 ขั้นตอน 
+- สร้าง `moduleServer` ซึ่งมี 2 argument คือ `id` และ server function ทั้งนี้ ใน server function ไม่ต้องใส่ `NS(id)` เหมือนกับ module ui
+- หุ้ม `moduleServer` ด้วย function อีกชั้นนึง โดยมี `id` เป็น argument
+การที่ module server function มีลักษณะซ้อนกัน 2 ชั้น ทำให้โปรแกรม สามารถแยกความแตกต่างระหว่าง module กับ server function ได้ 
+
+```{r, eval = FALSE}
+histogramServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    data <- reactive(mtcars[[input$var]])
+    output$hist <- renderPlot({
+      hist(data(), breaks = input$bins, main = input$var)
+    }, res = 96)
+  })
+}
+```
+
+## update app
+```{r}
+histogramApp <- function() {
+  ui <- fluidPage(
+    histogramUI("hist1")
+  )
+  server <- function(input, output, session) {
+    histogramServer("hist1")
+  }
+  shinyApp(ui, server)  
+}
+
+```
+
+```{r, eval = FALSE}
+myUI <- function(id) {
+  tagList(
+    <some>Input(NS(id, "<id_name>"), <someargs>)
+    <some>Outout(NS(id, "<id_name>"), <someargs>)
+  )
+}
+
+myServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+
+  })
+}
+```

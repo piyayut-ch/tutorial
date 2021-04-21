@@ -1,0 +1,102 @@
+---
+title: บทที่ 10 Dynamic UI
+output:
+  html_document:
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 8
+    fig_height: 5
+    fig_caption: true
+    df_print: paged
+    code_folding: show
+    highlight: zenburn
+    theme:
+      base_font : !expr bslib::font_google("Sarabun")
+      code_font : !expr bslib::font_google("Roboto Mono")
+
+---
+
+
+---
+ในบทนี้จะเป็นการทำให้ UI เปลี่ยนแปลงได้ตาม user input มี 3 เทคนิค ได้แก่
+
+- การใช้ function ตระกูล `update` เพื่อเปลี่ยนค่า parameter ใน input control  
+- การใช้ `tabsetPanel()` เพื่อตั้งเงื่อนไขในการแสดง ui  
+- การใช้ `uiOutput()` และ `renderUI()` เพื่อสร้าง ui ขึ้นเองจาก code
+
+เทคนิคเหล่านี้ทำให้เราสามารถเปลี่ยน input และ output ได้อย่างอิสระ แต่พึงระวังว่า code ที่ใช้เขียนขึ้นอาจจะซับซ้อนและยากต่อการ maintain ดังนั้น _ใช้วิธีที่ง่ายที่สุดเสมอ_
+
+```{r, eval = FALSE}
+library(shiny)
+library(dplyr, warn.conflicts = FALSE)
+```
+
+# Update
+เทคนิค นี้เป็น วิธีที่ง่ายที่สุด โดยเป็นการเปลี่ยนแปลง input control หลังจากที่สร้างขึ้นแล้ว ซึ่ง input control function จะมาพร้อมกับ update function ที่ใช้ชื่อเดียวกัน ยกตัวอย่างเช่น `sliderInput()` และ `updateSliderInput()` (function ใน shiny ใช้ camelCase)
+
+## การเปลี่ยน range ใน slider input
+ใช้ `observeEvent` ร่วมกับ `numericInput` ในการเปลี่ยนค่า parameter min และ max ของ `sliderInput` ตาม code ข่างล่างนี้
+```{r, eval = FALSE}
+ui <- fluidPage(
+  numericInput("min", "Minimum", 0),
+  numericInput("max", "Maximum", 3),
+  sliderInput("n", "n", min = 0, max = 3, value = 1)
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$min, {
+    updateSliderInput(inputId = "n", min = input$min)
+  })  
+  observeEvent(input$max, {
+    updateSliderInput(inputId = "n", max = input$max)
+  })
+}
+```
+
+## การ reset ค่า default
+ใช้ `actionButton` ร่วมกับ `observeEvent` ในการใช้ `updatesliderInput` ปรับค่าเป็น default
+```{r, eval = FALSE}
+ui <- fluidPage(
+  sliderInput("x1", "x1", 0, min = -10, max = 10),
+  sliderInput("x2", "x2", 0, min = -10, max = 10),
+  sliderInput("x3", "x3", 0, min = -10, max = 10),
+  actionButton("reset", "Reset")
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$reset, {
+    updateSliderInput(inputId = "x1", value = 0)
+    updateSliderInput(inputId = "x2", value = 0)
+    updateSliderInput(inputId = "x3", value = 0)
+  })
+}
+```
+
+## การเปลี่ยน label ของ input control
+
+```{r, eval = FALSE}
+ui <- fluidPage(
+  numericInput("n", "Simulations", 10),
+  actionButton("simulate", "Simulate")
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$n, {
+    label <- paste0("Simulate ", input$n, " times")
+    updateActionButton(inputId = "simulate", label = label)
+  })
+}
+```
+
+## Hierarchical select boxes
+ตัวอย่างการใช้ update function ที่มีความซับซ้อนมากขึ้น คือ การใช้ drill down select input
+
+
+
+```{r, include = FALSE, eval = FALSE}
+rmarkdown::run("ms/ch10_dynamic-UI.Rmd") 
+```
+
